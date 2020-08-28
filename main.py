@@ -11,10 +11,18 @@ from PyPDF4 import PdfFileReader, PdfFileWriter
 
 
 def split_pdf(pdf_path, start_page=None, end_page=None):
+    """Takes a PDF file and splits it into a page range if given one"""
     if os.path.isfile(pdf_path):
         pdf = PdfFileReader(pdf_path)
         pdf_dir, file_name = os.path.split(pdf_path)
         pdf_name = os.path.splitext(file_name)[0]
+
+        if start_page is None:
+            start_page = 1
+
+        if end_page is None:
+            end_page = pdf.getNumPages()
+            
         for page in range(pdf.getNumPages()):
             try:
                 if page >= start_page and page <= end_page:
