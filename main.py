@@ -31,6 +31,10 @@ class PdfHandler(object):
     def error_message(self, message):
         print("Error: {}".format(message))
 
+    def complete(self):
+        self.pdf_writer = None
+        self.pdf = None
+
     def execute_handler(self):
         # if only 1 pdf - split into single pages
         if len(self.pdf_paths) == 0:
@@ -149,11 +153,11 @@ class PdfHandler(object):
                     except Exception as e:
                         message = "Failed to split PDF page {}. ERROR: {}".format(page, e)
                         self.error_message(message)
-            
-            return
+            self.complete()
         else:
             message = "This is not a PDF File: {}".format(self.pdf_path)
             self.error_message(message)
+            self.complete()
             assert Exception(message)
 
 
