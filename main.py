@@ -16,17 +16,16 @@ from PyPDF4 import PdfFileReader, PdfFileWriter
 
 class PdfHandler(object):
     def __init__(self):
-        self.pdf_paths = []
-        self.pdf_path = None
-        self.start_page = None
-        self.end_page = None
-        self.page_range = None
-        self.pages_array = []
-        self.merge = None
-        self.pdf = None
-        self.page_count = None
-        self.split_files = []
-        self.pdf_writer = PdfFileWriter()
+        self.pdf_paths = []  # List of incoming PDFs
+        self.pdf_path = None  # Path to open PDF
+        self.start_page = None  # First page to split
+        self.end_page = None  # Last page to split
+        self.page_range = None  # String input of pages to split
+        self.pages_array = []  # List of pages to split
+        self.merge = False  # Flag for splitting pages into one file
+        self.pdf = None  # PDF File Reader
+        self.page_count = None  # Number of pages in split PDF
+        self.pdf_writer = PdfFileWriter()  # PDF File Writer
 
     def error_message(self, message):
         print("Error: {}".format(message))
@@ -119,6 +118,9 @@ class PdfHandler(object):
         """Write PDF to Disk"""
         with open(output_file_name, 'wb') as output_pdf:
             self.pdf_writer.write(output_pdf)
+
+    def merge_pdf(self):
+        return
 
     def split_pdf(self):
         """Takes a PDF file and splits it into a page range if given one"""
