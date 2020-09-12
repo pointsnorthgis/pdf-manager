@@ -112,7 +112,7 @@ class PdfHandler(object):
             else:
                 page_number_int = self.cast_to_page_int(page_input)
                 self.pages_array.append(page_number_int)
-        return
+        self.complete()
 
     def write_pdf(self, output_file_name):
         """Write PDF to Disk"""
@@ -164,9 +164,10 @@ class PdfHandler(object):
 
 
 class PdfMergeUI(PdfHandler):
+    """TKinter user interface for splitting/merging PDFs"""
     def __init__(self):
         super().__init__()
-        self.ui = Tk()
+        self.ui = Tk(className=' PDF Manager')
         self.setup_ui()
     
     def submit_callback(self):
@@ -186,6 +187,9 @@ class PdfMergeUI(PdfHandler):
         exit_btn = ttk.Button(popup, text="Okay", command=popup.destroy)
         exit_btn.pack()
         popup.mainloop()
+
+    def close(self):
+        self.ui.destroy()
     
     def setup_ui(self):
         """Setup user interface with TKinter"""
@@ -202,10 +206,31 @@ class PdfMergeUI(PdfHandler):
         def select_pdfs():
             """Function for opening file selector for multiple PDFs"""
             self.ui.files_list =  filedialog.askopenfilenames(
-                initialdir="/", title="Select file",
+                initialdir="./", title="Select file",
                 filetypes=(("pdf","*.pdf"),("all files","*.*"))
             )
             self.merge_files = self.ui.files_list
+            populate_listbox()
+
+        def clear_listbox():
+            list_length = self.pdf_select_list.size()
+            self.pdf_select_list.delete(0, list_length)
+
+        def populate_listbox():
+            clear_listbox()
+            for f in self.merge_files:
+                self.pdf_select_list.insert('end', f)
+
+        def show_frame_content(frame):
+            for widget in frame.winfo_children():
+                if widget.widgetName == 'scrollbar':
+                    widget.pack(fill='x', side='bottom')
+                else:
+                    widget.pack()
+
+        def hide_frame_content(frame):
+            for widget in frame.winfo_children():
+                widget.pack_forget()
 
         def combobox_select(event=None):
             """Change type of file selector based on combobox selection"""
@@ -213,6 +238,8 @@ class PdfMergeUI(PdfHandler):
                 if event.widget.get() == "Merge PDFs":
                     self.select_pdf['command'] = select_pdfs
                     self.select_pdf['text'] = "Select PDF Files"
+                    hide_frame_content(self.page_range_frame)
+                    show_frame_content(self.list_frame)
                 else:
                     self.select_pdf['command'] = select_pdf
                     self.select_pdf['text'] = "Select PDF File"
@@ -220,6 +247,11 @@ class PdfMergeUI(PdfHandler):
                         self.merge = True
                     else:
                         self.merge = False
+                    self.list_frame.lower()
+                    hide_frame_content(self.list_frame)
+                    show_frame_content(self.page_range_frame)
+
+        self.ui.geometry('300x500')
 
         label = tkinter.Label(text="Select PDF Operation")
 
@@ -236,24 +268,51 @@ class PdfMergeUI(PdfHandler):
             self.ui, text="Select PDF", command=select_pdf
         )
 
-        # Add text input for selecting page ranges
-        self.page_range_label = tkinter.Label(
+        # List of PDFs to merge
+        self.list_frame = tkinter.Frame(self.ui)
+        
+        scroll_bar = tkinter.Scrollbar(
+            self.list_frame, orient='horizontal'
+        )
+
+        self.pdf_select_list = tkinter.Listbox(
+            self.list_frame, xscrollcommand=scroll_bar.set,
+            width=40, height=10
+        )
+        self.pdf_select_list.pack(fill='x', expand=1)
+        self.pdf_select_list.config()
+        self.pdf_select_list.insert("end", 'TEST1')
+        self.pdf_select_list.insert("end", 'TEST2')
+        scroll_bar.config(command=self.pdf_select_list.xview)
+        scroll_bar.pack(fill='x', side='bottom')
+        self.list_frame.pack()
+
+        # Add frame, label and text input for selecting page ranges
+        self.page_range_frame = tkinter.Frame(self.ui)
+        page_range_label = tkinter.Label(
+            self.page_range_frame,
             text="Enter Page Selection/Range \n (i.e. 1,2,4-6,10)",
             height=2
-            )
-        self.page_range = tkinter.Entry(self.ui, textvariable=tkinter.StringVar())
-        self.page_range.pack()
+        )
+        page_range_label.pack()
+        self.page_range = tkinter.Entry(self.page_range_frame, textvariable=tkinter.StringVar())
+        self.page_range.pack(fill='y')
 
         self.submit_button = tkinter.Button(
             self.ui, text="Start", command=self.submit_callback, bg="green"
         )
 
+        self.close_button = tkinter.Button(
+            self.ui, text="Close", command=self.close, bg="red"
+        )
+
         label.place(x=5, y=10)
         self.combo_box.place(x=10, y=30)
         self.select_pdf.place(x=10, y=60)
-        self.page_range_label.place(x=10, y=90)
-        self.page_range.place(x=10, y=130)
-        self.submit_button.place(x=50, y=170)
+        self.page_range_frame.place(x=10, y=90)
+        self.list_frame.place(x=10, y=170)
+        self.submit_button.place(x=100, y=350)
+        self.close_button.place(x=140, y=350)
         self.ui.mainloop()
 
 if __name__ == '__main__':
