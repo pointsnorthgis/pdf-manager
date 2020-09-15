@@ -230,7 +230,7 @@ class PdfMergeUI(PdfHandler):
         def populate_listbox():
             """Add selected PDF paths to listbox"""
             clear_listbox()
-            for f in self.merge_files:
+            for f in self.pdf_paths:
                 self.pdf_select_list.insert('end', f)
 
         def show_frame_content(frame):
