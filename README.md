@@ -15,9 +15,11 @@ Split PDF into single file command line example:
 
 `pdf_handler.exe --pdf "c:/path/to/pdf_file.pdf" --merge --pages 1 3-5 7`
 
+
 Split PDF file into single pages:
 
 `pdf_handler.exe --pdf "c:/path/to/pdf_file.pdf" --pages 1 3-5 7`
+
 
 Merge multiple PDFs into one:
 
