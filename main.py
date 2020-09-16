@@ -335,14 +335,22 @@ class PdfMergeUI(PdfHandler):
 if __name__ == '__main__':
     """If program is run with commandline flags, parses arguments, otherwise use TKinter"""
     parser = argparse.ArgumentParser(description='Split Multi page PDF into single pages.')
-    parser.add_argument('--pdf', type=str, nargs='+', required=False, help='Path to PDF file')
+    parser.add_argument(
+        '--pdf', type=str, nargs='+', required=False,
+        help='''
+        Use the --pdf flag to enter a PDF file to split into multiple pages 
+        or enter multiple pdf documents to merge into a single pdf.
+        '''
+        )
     parser.add_argument(
         '--merge', dest='merge', action='store_true',
-        help='Merge Pages into one PDF'
+        help='''
+        Use this flag to split pages into one pdf.
+            '''
         )
     parser.add_argument(
         '--pages', type=str, nargs='?', required=False,
-        help='Select Pages (ie 1 3-5 7)'
+        help='Select specific pages or page ranges to split (ie 1 3-5 7)'
         )
     args = parser.parse_args()
     pdf = args.pdf
