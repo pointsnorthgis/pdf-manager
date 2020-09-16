@@ -12,15 +12,19 @@ This program can be used via commandline with the following flags:
 
 
 Split PDF into single file command line example:
+
 `pdf_handler.exe --pdf "c:/path/to/pdf_file.pdf" --merge --pages 1 3-5 7`
 
 Split PDF file into single pages:
+
 `pdf_handler.exe --pdf "c:/path/to/pdf_file.pdf" --pages 1 3-5 7`
 
 Merge multiple PDFs into one:
+
 ***Note. PDFs will merge based on order they are entered. The output file will appear as "merged.pdf" in the directory of the first PDF in the list***
 
 `pdf_handler.exe --pdf "c:/path/to/pdf_file1.pdf" "c:/path/to/pdf_file2.pdf"`
+
 
 
 The PDF Handler program also has a basic user interface built in. Download the .exe file and open to run.
