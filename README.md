@@ -30,3 +30,13 @@ Merge multiple PDFs into one:
 
 
 The PDF Handler program also has a basic user interface built in. Download the .exe file and open to run.
+
+
+# Using pyinstaller to compile
+Use the following command to create an executable/compiled program for the PdfManager
+
+'''bash
+pyinstaller pdfmanager/main.py --onefile --noconsole --name pdfmanager
+'''
+
+The program will be created in the *./dist* folder as **pdfmanager.exe**. It can be moved and run from any directory on the system.
