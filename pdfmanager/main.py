@@ -12,6 +12,8 @@ import argparse
 import tkinter
 from tkinter import Tk, filedialog, messagebox, ttk
 from PyPDF4 import PdfFileReader, PdfFileWriter
+import PIL
+import fitz
 
 
 class PdfHandler(object):
@@ -198,6 +200,14 @@ class PdfMergeUI(PdfHandler):
         exit_btn = ttk.Button(popup, text="Okay", command=popup.destroy)
         exit_btn.pack()
         popup.mainloop()
+
+
+    def pdf_page_image(self, pdf_page):
+        doc = fitz.open(self.pdf_path)
+        page = doc.loadPage(pdf_page)
+        pix = page.getPixmap()
+        img = pix.pillowData(format="JPEG", optimize=True)
+        return img
 
     def close(self):
         self.ui.destroy()
