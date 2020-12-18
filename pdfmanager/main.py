@@ -187,6 +187,7 @@ class PdfMergeUI(PdfHandler):
             self.split_pdf()
         else:
             self.merge_pdf()
+        
 
     def error_message(self, message):
         '''Error message as popup'''
@@ -211,7 +212,14 @@ class PdfMergeUI(PdfHandler):
                 filetypes=(("pdf","*.pdf"),("all files","*.*"))
             )
             self.filename = self.ui.filename
-            self.pdf_paths.append(self.ui.filename)
+            self.pdf_paths = []
+            self.pdf_paths.append(self.filename)
+            self.pdf_path = self.filename
+            label = os.path.split(self.filename)[1]
+            if len(label) > 50:
+                label = '...' + label[-50:]
+            self.file_name_label.config(text=label)
+            
 
         def select_pdfs():
             """Function for opening file selector for multiple PDFs"""
@@ -253,6 +261,7 @@ class PdfMergeUI(PdfHandler):
                     self.select_pdf['command'] = select_pdfs
                     self.select_pdf['text'] = "Select PDF Files"
                     hide_frame_content(self.page_range_frame)
+                    hide_frame_content(self.file_name_frame)
                     show_frame_content(self.list_frame)
                 else:
                     self.select_pdf['command'] = select_pdf
@@ -264,6 +273,7 @@ class PdfMergeUI(PdfHandler):
                     self.list_frame.lower()
                     hide_frame_content(self.list_frame)
                     show_frame_content(self.page_range_frame)
+                    show_frame_content(self.file_name_frame)
 
         def listbox_select(event=None):
             """Get the currently selected listbox item"""
@@ -278,7 +288,7 @@ class PdfMergeUI(PdfHandler):
         # Combobox for selecting how PDFs will be processed
         self.combo_box = ttk.Combobox(
             self.ui,
-            values=['Split to Multiple PDFs', 'Split to Single PDF', 'Merge PDFs'],
+            values=['Split to Multiple PDFs', 'Split to Single PDF', 'Merge PDFs', 'Edit PDF'],
         )
         self.combo_box.set("Split to Multiple PDFs")
         self.combo_box.pack()
@@ -287,6 +297,14 @@ class PdfMergeUI(PdfHandler):
         self.select_pdf = tkinter.Button(
             self.ui, text="Select PDF", command=select_pdf
         )
+
+        self.file_name_frame = tkinter.Frame(self.ui)
+        self.file_name_label = tkinter.Label(
+            self.file_name_frame,
+            text="No PDF Selected",
+            height=2
+        )
+        self.file_name_label.pack()
 
         # List of PDFs to merge
         self.list_frame = tkinter.Frame(self.ui)
@@ -323,13 +341,18 @@ class PdfMergeUI(PdfHandler):
             self.ui, text="Close", command=self.close, bg="red"
         )
 
+        self.canvas = tkinter.Canvas(height=100, width=100)
+        self.canvas.pack()
+
         label.place(x=5, y=10)
         self.combo_box.place(x=10, y=30)
         self.select_pdf.place(x=10, y=60)
-        self.page_range_frame.place(x=10, y=90)
-        self.list_frame.place(x=10, y=170)
-        self.submit_button.place(x=100, y=350)
-        self.close_button.place(x=140, y=350)
+        self.file_name_frame.place(x=10, y=85)
+        self.page_range_frame.place(x=10, y=115)
+        self.list_frame.place(x=10, y=195)
+        self.submit_button.place(x=100, y=380)
+        self.close_button.place(x=140, y=380)
+        self.canvas.place(x=10, y=410)
         self.ui.mainloop()
 
 if __name__ == '__main__':
