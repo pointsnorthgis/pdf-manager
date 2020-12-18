@@ -176,6 +176,7 @@ class PdfMergeUI(PdfHandler):
         super().__init__()
         self.ui = Tk(className=' PDF Manager')
         self.setup_ui()
+        self.pdf_image = None
     
     def submit_callback(self):
         """Actions to complete after submit button clicked"""
@@ -189,6 +190,31 @@ class PdfMergeUI(PdfHandler):
             self.split_pdf()
         else:
             self.merge_pdf()
+        self.complete_message()
+
+
+    def complete_message(self):
+        '''complete message as popup'''
+        popup = Tk()
+        popup.wm_title("!")
+        label = ttk.Label(popup, text="Proccessing Complete", font=("Verdana", 10))
+        label.pack(side="top", fill="x", pady=10)
+        exit_btn = ttk.Button(popup, text="Okay", command=popup.destroy)
+        exit_btn.pack()
+        popup.mainloop()
+
+
+    def edit_pdf_page(self):
+        '''Child window with buttons for rotating pdf pages'''
+        # If a valid PDF is not selected, do not open window
+        if not self.pdf_path or not os.path.isfile(self.pdf_path):
+            return
+
+        pdf_window = tkinter.Toplevel(self.ui)
+        pdf_window.wm_title('Edit PDF')
+        self.pdf_canvas = tkinter.Canvas(height=400, width=300)
+        self.canvas.pack(side="top", fill="both", expand=True, padx=100, pady=100)
+        return
         
 
     def error_message(self, message):
@@ -282,7 +308,13 @@ class PdfMergeUI(PdfHandler):
                         self.merge = False
                     self.list_frame.lower()
                     hide_frame_content(self.list_frame)
-                    show_frame_content(self.page_range_frame)
+
+                    if event.widget.get() != "Edit PDF":
+                        show_frame_content(self.page_range_frame)
+                    if event.widget.get() == "Edit PDF":
+                        hide_frame_content(self.page_range_frame)
+                        show_frame_content(self.edit_pdf_btn_frame)
+                    
                     show_frame_content(self.file_name_frame)
 
         def listbox_select(event=None):
@@ -343,6 +375,12 @@ class PdfMergeUI(PdfHandler):
         self.page_range = tkinter.Entry(self.page_range_frame, textvariable=tkinter.StringVar())
         self.page_range.pack(fill='y')
 
+        self.edit_pdf_btn_frame = tkinter.Frame(self.ui)
+        edit_pdf_btn = tkinter.Button(
+            self.edit_pdf_btn_frame, text="Edit PDF",
+            command=self.edit_pdf_page
+        )
+
         self.submit_button = tkinter.Button(
             self.ui, text="Start", command=self.submit_callback, bg="green"
         )
@@ -359,6 +397,7 @@ class PdfMergeUI(PdfHandler):
         self.select_pdf.place(x=10, y=60)
         self.file_name_frame.place(x=10, y=85)
         self.page_range_frame.place(x=10, y=115)
+        self.edit_pdf_btn_frame.place(x=10, y=115)
         self.list_frame.place(x=10, y=195)
         self.submit_button.place(x=100, y=380)
         self.close_button.place(x=140, y=380)
