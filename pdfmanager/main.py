@@ -10,9 +10,10 @@ import os
 import sys
 import argparse
 import tkinter
-from tkinter import Tk, filedialog, messagebox, ttk
+from tkinter import Tk, filedialog, messagebox, ttk, Toplevel
 from PyPDF4 import PdfFileReader, PdfFileWriter
 import PIL
+from PIL import ImageTk
 import fitz
 
 
@@ -28,6 +29,7 @@ class PdfHandler(object):
         self.pdf = None  # PDF File Reader
         self.page_count = None  # Number of pages in split PDF
         self.pdf_writer = PdfFileWriter()  # PDF File Writer
+        self.pdf_image = None
 
     def error_message(self, message):
         print("Error: {}".format(message))
@@ -81,6 +83,13 @@ class PdfHandler(object):
             self.start_page = self.pages_array[0]
         if not self.end_page:
             self.end_page = self.pages_array[-1]
+
+    def pdf_page_image(self, pdf_page=0):
+        doc = fitz.open(self.pdf_path)
+        page = doc.loadPage(pdf_page)
+        pix = page.getPixmap()
+        self.pdf_image = PIL.Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        return self.pdf_image
 
     def parse_pages(self, page_range_input):
         """
@@ -174,9 +183,9 @@ class PdfMergeUI(PdfHandler):
     """TKinter user interface for splitting/merging PDFs"""
     def __init__(self):
         super().__init__()
+        self.current_page = 0
         self.ui = Tk(className=' PDF Manager')
         self.setup_ui()
-        self.pdf_image = None
     
     def submit_callback(self):
         """Actions to complete after submit button clicked"""
@@ -192,7 +201,6 @@ class PdfMergeUI(PdfHandler):
             self.merge_pdf()
         self.complete_message()
 
-
     def complete_message(self):
         '''complete message as popup'''
         popup = Tk()
@@ -203,19 +211,50 @@ class PdfMergeUI(PdfHandler):
         exit_btn.pack()
         popup.mainloop()
 
+    def init_pdf_image(self, pdf_page=0):
+        self.pdf_page_image(pdf_page)
+        self.pdf_image = ImageTk.PhotoImage(self.pdf_image)
+        self.pdf_canvas.create_image((0,0), image=self.pdf_image, anchor='nw')
+
+    def next_pdf_page(self):
+        if self.current_page < self.end_page:
+            self.current_page += 1
+        self.init_pdf_image(pdf_page=self.current_page)
+
+    def previous_pdf_page(self):
+        if self.current_page >= self.start_page:
+            self.current_page = self.current_page - 1
+        self.init_pdf_image(pdf_page=self.current_page)
 
     def edit_pdf_page(self):
         '''Child window with buttons for rotating pdf pages'''
         # If a valid PDF is not selected, do not open window
         if not self.pdf_path or not os.path.isfile(self.pdf_path):
             return
-
-        pdf_window = tkinter.Toplevel(self.ui)
+        pdf_window = Toplevel()
         pdf_window.wm_title('Edit PDF')
-        self.pdf_canvas = tkinter.Canvas(height=400, width=300)
-        self.canvas.pack(side="top", fill="both", expand=True, padx=100, pady=100)
+        pdf_window.geometry('1000x1000')
+        self.rotate_ccw_btn = tkinter.Button(pdf_window, text="Rotate CCW")
+        self.rotate_ccw_btn.pack()
+        self.previous_page_btn = tkinter.Button(pdf_window, text="Previous Page", command=self.previous_pdf_page)
+        self.previous_page_btn.pack()
+        self.next_page_btn = tkinter.Button(pdf_window, text="Next Page", command=self.next_pdf_page)
+        self.next_page_btn.pack()
+        self.rotate_cw_btn = tkinter.Button(pdf_window, text="Rotate CW")
+        self.rotate_cw_btn.pack()
+        self.pdf_canvas = tkinter.Canvas(pdf_window, height=1000, width=1000, bg="grey")
+        self.pdf_canvas.pack()
+
+        self.rotate_ccw_btn.place(x=10, y=10)
+        self.previous_page_btn.place(x=100, y=10)
+        self.next_page_btn.place(x=200, y=10)
+        self.rotate_cw_btn.place(x=280, y=10)
+        self.pdf_canvas.place(x=10, y=50)
+        self.list_pages(self.pdf_path)
+        self.get_bounding_pages()
+        self.init_pdf_image()
+        pdf_window.mainloop()
         return
-        
 
     def error_message(self, message):
         '''Error message as popup'''
@@ -226,14 +265,6 @@ class PdfMergeUI(PdfHandler):
         exit_btn = ttk.Button(popup, text="Okay", command=popup.destroy)
         exit_btn.pack()
         popup.mainloop()
-
-
-    def pdf_page_image(self, pdf_page):
-        doc = fitz.open(self.pdf_path)
-        page = doc.loadPage(pdf_page)
-        pix = page.getPixmap()
-        img = pix.pillowData(format="JPEG", optimize=True)
-        return img
 
     def close(self):
         self.ui.destroy()
@@ -256,7 +287,6 @@ class PdfMergeUI(PdfHandler):
                 label = '...' + label[-50:]
             self.file_name_label.config(text=label)
             
-
         def select_pdfs():
             """Function for opening file selector for multiple PDFs"""
             self.ui.files_list =  filedialog.askopenfilenames(
@@ -372,8 +402,9 @@ class PdfMergeUI(PdfHandler):
             height=2
         )
         page_range_label.pack()
-        self.page_range = tkinter.Entry(self.page_range_frame, textvariable=tkinter.StringVar())
-        self.page_range.pack(fill='y')
+        
+        self.page_range_text = tkinter.Entry(self.page_range_frame, textvariable=tkinter.StringVar())
+        self.page_range_text.pack(fill='y')
 
         self.edit_pdf_btn_frame = tkinter.Frame(self.ui)
         edit_pdf_btn = tkinter.Button(
@@ -389,8 +420,8 @@ class PdfMergeUI(PdfHandler):
             self.ui, text="Close", command=self.close, bg="red"
         )
 
-        self.canvas = tkinter.Canvas(height=100, width=100)
-        self.canvas.pack()
+        # self.canvas = tkinter.Canvas(height=100, width=100)
+        # self.canvas.pack()
 
         label.place(x=5, y=10)
         self.combo_box.place(x=10, y=30)
@@ -401,7 +432,7 @@ class PdfMergeUI(PdfHandler):
         self.list_frame.place(x=10, y=195)
         self.submit_button.place(x=100, y=380)
         self.close_button.place(x=140, y=380)
-        self.canvas.place(x=10, y=410)
+        # self.canvas.place(x=10, y=410)
         self.ui.mainloop()
 
 if __name__ == '__main__':
