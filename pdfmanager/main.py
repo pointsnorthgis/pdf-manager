@@ -328,6 +328,7 @@ class PdfMergeUI(PdfHandler):
                     self.select_pdf['text'] = "Select PDF Files"
                     hide_frame_content(self.page_range_frame)
                     hide_frame_content(self.file_name_frame)
+                    hide_frame_content(self.edit_pdf_btn_frame)
                     show_frame_content(self.list_frame)
                 else:
                     self.select_pdf['command'] = select_pdf
@@ -340,6 +341,7 @@ class PdfMergeUI(PdfHandler):
                     hide_frame_content(self.list_frame)
 
                     if event.widget.get() != "Edit PDF":
+                        hide_frame_content(self.edit_pdf_btn_frame)
                         show_frame_content(self.page_range_frame)
                     if event.widget.get() == "Edit PDF":
                         hide_frame_content(self.page_range_frame)
@@ -411,6 +413,7 @@ class PdfMergeUI(PdfHandler):
             self.edit_pdf_btn_frame, text="Edit PDF",
             command=self.edit_pdf_page
         )
+        edit_pdf_btn.pack_forget()
 
         self.submit_button = tkinter.Button(
             self.ui, text="Start", command=self.submit_callback, bg="green"
