@@ -212,10 +212,15 @@ class PdfMergeUI(PdfHandler):
         exit_btn.pack()
         popup.mainloop()
 
-    def init_pdf_image(self, pdf_page=0, rotation=0):
+    def init_pdf_image(self, pdf_page=0):
+        '''Get PDF Page as image and display in GUI'''
         self.pdf_page_image(pdf_page)
-        if rotation != 0:
-            self.pdf_image = self.pdf_image.rotate(rotation)
+        rotate = 0
+        if pdf_page in self.edited_pages.keys():
+            if "rotate" in self.edited_pages[pdf_page].keys():
+                rotate = self.edited_pages[pdf_page]["rotate"]
+        if rotate != 0:
+            self.pdf_image = self.pdf_image.rotate(rotate)
         self.pdf_image = ImageTk.PhotoImage(self.pdf_image)
         self.pdf_canvas.create_image((0,0), image=self.pdf_image, anchor='nw')
 
@@ -240,7 +245,7 @@ class PdfMergeUI(PdfHandler):
         else:
             self.edited_pages[page] = {"rotate": 90}
         rotation = self.edited_pages[page]["rotate"]
-        self.init_pdf_image(pdf_page=page, rotation=rotation)
+        self.init_pdf_image(pdf_page=page)
         return
 
     def rotate_pdf_cw(self):
@@ -254,7 +259,7 @@ class PdfMergeUI(PdfHandler):
         else:
             self.edited_pages[page] = {"rotate": -90}
         rotation = self.edited_pages[page]["rotate"]
-        self.init_pdf_image(pdf_page=page, rotation=rotation)
+        self.init_pdf_image(pdf_page=page)
         return
 
     def save_pdf_edit(self):
