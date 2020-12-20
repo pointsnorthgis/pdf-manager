@@ -226,30 +226,51 @@ class PdfMergeUI(PdfHandler):
             self.current_page = self.current_page - 1
         self.init_pdf_image(pdf_page=self.current_page)
 
+    def rotate_pdf_cw(self):
+        '''Rotate PDF Page Clockwise'''
+        return
+
+    def rotate_pdf_ccw(self):
+        '''Rotate PDF Page Counter Clockwise'''
+        return
+
+    def save_pdf_edit(self):
+        '''Save edits to PDF File'''
+        return
+
     def edit_pdf_page(self):
         '''Child window with buttons for rotating pdf pages'''
         # If a valid PDF is not selected, do not open window
         if not self.pdf_path or not os.path.isfile(self.pdf_path):
             return
-        pdf_window = Toplevel()
+        self.pdf_window = Toplevel()
+        pdf_window = self.pdf_window
         pdf_window.wm_title('Edit PDF')
         pdf_window.geometry('1000x1000')
-        self.rotate_ccw_btn = tkinter.Button(pdf_window, text="Rotate CCW")
-        self.rotate_ccw_btn.pack()
-        self.previous_page_btn = tkinter.Button(pdf_window, text="Previous Page", command=self.previous_pdf_page)
-        self.previous_page_btn.pack()
-        self.next_page_btn = tkinter.Button(pdf_window, text="Next Page", command=self.next_pdf_page)
-        self.next_page_btn.pack()
-        self.rotate_cw_btn = tkinter.Button(pdf_window, text="Rotate CW")
-        self.rotate_cw_btn.pack()
+        rotate_ccw_btn = tkinter.Button(pdf_window, text="Rotate CCW", command=self.rotate_pdf_ccw)
+        rotate_ccw_btn.pack()
+        previous_page_btn = tkinter.Button(pdf_window, text="Previous Page", command=self.previous_pdf_page)
+        previous_page_btn.pack()
+        next_page_btn = tkinter.Button(pdf_window, text="Next Page", command=self.next_pdf_page)
+        next_page_btn.pack()
+        rotate_cw_btn = tkinter.Button(pdf_window, text="Rotate CW", command=self.rotate_pdf_cw)
+        rotate_cw_btn.pack()
+        save_btn = tkinter.Button(pdf_window, text="Save", command=self.save_pdf_edit)
+        save_btn.pack()
+        cancel_btn = tkinter.Button(pdf_window, text="Cancel", bg="red", command=self.close_pdf_edit)
+        cancel_btn.pack()
         self.pdf_canvas = tkinter.Canvas(pdf_window, height=1000, width=1000, bg="grey")
         self.pdf_canvas.pack()
 
-        self.rotate_ccw_btn.place(x=10, y=10)
-        self.previous_page_btn.place(x=100, y=10)
-        self.next_page_btn.place(x=200, y=10)
-        self.rotate_cw_btn.place(x=280, y=10)
+        rotate_ccw_btn.place(x=10, y=10)
+        previous_page_btn.place(x=100, y=10)
+        next_page_btn.place(x=200, y=10)
+        rotate_cw_btn.place(x=280, y=10)
+        save_btn.place(x=360, y=10)
+        cancel_btn.place(x=430, y=10)
         self.pdf_canvas.place(x=10, y=50)
+
+        # Get PDF Properties
         self.list_pages(self.pdf_path)
         self.get_bounding_pages()
         self.init_pdf_image()
@@ -268,6 +289,9 @@ class PdfMergeUI(PdfHandler):
 
     def close(self):
         self.ui.destroy()
+
+    def close_pdf_edit(self):
+        self.pdf_window.destroy()
     
     def setup_ui(self):
         """Setup user interface with TKinter"""
