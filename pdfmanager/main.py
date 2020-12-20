@@ -30,6 +30,7 @@ class PdfHandler(object):
         self.page_count = None  # Number of pages in split PDF
         self.pdf_writer = PdfFileWriter()  # PDF File Writer
         self.pdf_image = None
+        self.edited_pages = {}
 
     def error_message(self, message):
         print("Error: {}".format(message))
@@ -267,7 +268,7 @@ class PdfMergeUI(PdfHandler):
         next_page_btn.place(x=200, y=10)
         rotate_cw_btn.place(x=280, y=10)
         save_btn.place(x=360, y=10)
-        cancel_btn.place(x=430, y=10)
+        cancel_btn.place(x=410, y=10)
         self.pdf_canvas.place(x=10, y=50)
 
         # Get PDF Properties
