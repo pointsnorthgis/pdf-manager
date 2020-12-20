@@ -212,8 +212,10 @@ class PdfMergeUI(PdfHandler):
         exit_btn.pack()
         popup.mainloop()
 
-    def init_pdf_image(self, pdf_page=0):
+    def init_pdf_image(self, pdf_page=0, rotation=0):
         self.pdf_page_image(pdf_page)
+        if rotation != 0:
+            self.pdf_image = self.pdf_image.rotate(rotation)
         self.pdf_image = ImageTk.PhotoImage(self.pdf_image)
         self.pdf_canvas.create_image((0,0), image=self.pdf_image, anchor='nw')
 
@@ -227,12 +229,32 @@ class PdfMergeUI(PdfHandler):
             self.current_page = self.current_page - 1
         self.init_pdf_image(pdf_page=self.current_page)
 
-    def rotate_pdf_cw(self):
+    def rotate_pdf_ccw(self):
         '''Rotate PDF Page Clockwise'''
+        page = self.current_page
+        if page in self.edited_pages.keys():
+            if "rotate" in self.edited_pages[page].keys():
+                self.edited_pages[page]["rotate"] += 90
+            else:
+                self.edited_pages[page]["rotate"] = 90
+        else:
+            self.edited_pages[page] = {"rotate": 90}
+        rotation = self.edited_pages[page]["rotate"]
+        self.init_pdf_image(pdf_page=page, rotation=rotation)
         return
 
-    def rotate_pdf_ccw(self):
+    def rotate_pdf_cw(self):
         '''Rotate PDF Page Counter Clockwise'''
+        page = self.current_page
+        if page in self.edited_pages.keys():
+            if "rotate" in self.edited_pages[page].keys():
+                self.edited_pages[page]["rotate"] += -90
+            else:
+                self.edited_pages[page]["rotate"] = -90
+        else:
+            self.edited_pages[page] = {"rotate": -90}
+        rotation = self.edited_pages[page]["rotate"]
+        self.init_pdf_image(pdf_page=page, rotation=rotation)
         return
 
     def save_pdf_edit(self):
