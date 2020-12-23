@@ -179,6 +179,24 @@ class PdfHandler(object):
             self.complete()
             assert Exception(message)
 
+    def save_pdf_edit(self):
+        '''Save edits to PDF File'''
+        base_path, file_name = os.path.split(self.pdf_paths[0])
+        file_name, extension = os.path.splitext(file_name)
+        edited_file_name = file_name + '_edited' + extension
+        output_filename = os.path.join(base_path, edited_file_name)
+        for pdf in self.pdf_paths:
+            self.pdf = PdfFileReader(pdf)
+            for page_num in range(0, self.pdf.getNumPages()):
+                page = self.pdf.getPage(page_num)
+                if page_num in self.edited_pages.keys():
+                    if "rotate" in self.edited_pages[page_num].keys():
+                        rotate = self.edited_pages[page_num]["rotate"]
+                        page.rotateCounterClockwise(rotate)
+                self.pdf_writer.addPage(page)
+        self.write_pdf(output_filename)
+        self.complete()
+        return
 
 class PdfMergeUI(PdfHandler):
     """TKinter user interface for splitting/merging PDFs"""
@@ -260,10 +278,6 @@ class PdfMergeUI(PdfHandler):
             self.edited_pages[page] = {"rotate": -90}
         rotation = self.edited_pages[page]["rotate"]
         self.init_pdf_image(pdf_page=page)
-        return
-
-    def save_pdf_edit(self):
-        '''Save edits to PDF File'''
         return
 
     def edit_pdf_page(self):
