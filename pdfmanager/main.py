@@ -196,6 +196,8 @@ class PdfHandler(object):
                 self.pdf_writer.addPage(page)
         self.write_pdf(output_filename)
         self.complete()
+        self.close_pdf_edit()
+        self.complete_message()
         return
 
 class PdfMergeUI(PdfHandler):
