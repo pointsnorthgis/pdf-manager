@@ -85,12 +85,14 @@ class PdfHandler(object):
         if not self.end_page:
             self.end_page = self.pages_array[-1]
 
-    def pdf_page_image(self, pdf_page=0):
+    def pdf_page_image(self, pdf_page=0, rotate=0):
         doc = fitz.open(self.pdf_path)
         page = doc.loadPage(pdf_page)
         pix = page.getPixmap()
-        self.pdf_image = PIL.Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-        return self.pdf_image
+        pil_image = PIL.Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        if rotate != 0:
+            pil_image = pil_image.rotate(rotate, PIL.Image.NEAREST, expand=1)
+        return pil_image
 
     def parse_pages(self, page_range_input):
         """
@@ -234,15 +236,16 @@ class PdfMergeUI(PdfHandler):
 
     def init_pdf_image(self, pdf_page=0):
         '''Get PDF Page as image and display in GUI'''
-        self.pdf_page_image(pdf_page)
         rotate = 0
         if pdf_page in self.edited_pages.keys():
             if "rotate" in self.edited_pages[pdf_page].keys():
                 rotate = self.edited_pages[pdf_page]["rotate"]
-        if rotate != 0:
-            self.pdf_image = self.pdf_image.rotate(rotate)
+        
+        self.pdf_image = self.pdf_page_image(pdf_page, rotate=rotate)
         self.pdf_image = ImageTk.PhotoImage(self.pdf_image)
-        self.pdf_canvas.create_image((0,0), image=self.pdf_image, anchor='nw')
+        # self.pdf_canvas['width'] = self.pdf_image.width()
+        # self.pdf_canvas['height'] = self.pdf_image.height()
+        self.pdf_canvas.create_image((10,10), image=self.pdf_image, anchor='nw')
 
     def next_pdf_page(self):
         if self.current_page < self.end_page:
@@ -264,7 +267,6 @@ class PdfMergeUI(PdfHandler):
                 self.edited_pages[page]["rotate"] = 90
         else:
             self.edited_pages[page] = {"rotate": 90}
-        rotation = self.edited_pages[page]["rotate"]
         self.init_pdf_image(pdf_page=page)
         return
 
