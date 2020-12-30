@@ -3,7 +3,7 @@ Utility for splitting multi page PDFs into single page files
 Developed By: Zackary King
 Created: August 27, 2020
 Updated By: Zackary King 
-Updated On: August 28, 2020
+Updated On: December 29, 2020
 """
 
 import os
