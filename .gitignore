@@ -1,9 +1,6 @@
 # virtual environment files
 env
 
-# Test Files
-test_data/docs-pdf
-
 # Microsoft Visual Studio Code Files
 .vscode
 
