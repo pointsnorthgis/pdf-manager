@@ -13,10 +13,24 @@ class TestPdfEditor(unittest.TestCase):
 
     def test_pdf_to_image(self):
         pdf_image = self.pdf_handler.pdf_page_image()
+        self.assertIsInstance(pdf_image, PIL.Image.Image)
 
-        # Test initial PDF page image
-        assert isinstance(pdf_image, PIL.Image.Image)
-        
-        # Test PDF Page rotation
-        pdf_image = self.pdf_handler.pdf_page_image(pdf_page=1, rotate=90)
-        assert isinstance(pdf_image, PIL.Image.Image)
+    
+    def test_pdf_rotate(self):
+        self.pdf_handler.current_page = 0
+
+        # Test Counter Clockwise Rotation
+        self.pdf_handler.rotate_pdf_page(self.pdf_handler.current_page, 'ccw')
+        self.assertGreater(len(self.pdf_handler.edited_pages), 0)
+        self.assertNotEqual(
+            self.pdf_handler.edited_pages[self.pdf_handler.current_page]['rotate'], 0
+            )
+
+        # Test Clockwise Rotation
+        self.pdf_handler.rotate_pdf_page(self.pdf_handler.current_page, 'cw')
+        self.assertEqual(
+            self.pdf_handler.edited_pages[self.pdf_handler.current_page]['rotate'], 0
+            )
+
+    def test_save_pdf(self):
+        return
