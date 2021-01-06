@@ -31,6 +31,7 @@ class PdfHandler(object):
         self.pdf_writer = PdfFileWriter()  # PDF File Writer
         self.pdf_image = None
         self.edited_pages = {}
+        self.current_page = 0
 
     def error_message(self, message):
         print("Error: {}".format(message))
@@ -93,6 +94,23 @@ class PdfHandler(object):
         if rotate != 0:
             pil_image = pil_image.rotate(rotate, PIL.Image.NEAREST, expand=1)
         return pil_image
+
+    def rotate_pdf_page(self, page, direction):
+        direction = direction.lower()
+        if direction == 'ccw':
+            rotate = 90
+        elif direction == 'cw':
+            rotate = -90
+        else:
+            raise Exception("Enter 'ccw' or 'cw' as rotation directions")
+
+        if page in self.edited_pages.keys():
+            if "rotate" in self.edited_pages[page].keys():
+                self.edited_pages[page]["rotate"] += rotate
+            else:
+                self.edited_pages[page]["rotate"] = rotate
+        else:
+            self.edited_pages[page] = {"rotate": rotate}
 
     def parse_pages(self, page_range_input):
         """
@@ -185,7 +203,6 @@ class PdfMergeUI(PdfHandler):
     """TKinter user interface for splitting/merging PDFs"""
     def __init__(self):
         super().__init__()
-        self.current_page = 0
         self.ui = Tk(className=' PDF Manager')
         self.setup_ui()
     
@@ -237,28 +254,15 @@ class PdfMergeUI(PdfHandler):
         self.init_pdf_image(pdf_page=self.current_page)
 
     def rotate_pdf_ccw(self):
-        '''Rotate PDF Page Clockwise'''
+        '''Rotate PDF Page Conter Clockwise'''
         page = self.current_page
-        if page in self.edited_pages.keys():
-            if "rotate" in self.edited_pages[page].keys():
-                self.edited_pages[page]["rotate"] += 90
-            else:
-                self.edited_pages[page]["rotate"] = 90
-        else:
-            self.edited_pages[page] = {"rotate": 90}
+        self.rotate_pdf_page(page, 'ccw')
         self.init_pdf_image(pdf_page=page)
-        return
 
     def rotate_pdf_cw(self):
-        '''Rotate PDF Page Counter Clockwise'''
+        '''Rotate PDF Page Clockwise'''
         page = self.current_page
-        if page in self.edited_pages.keys():
-            if "rotate" in self.edited_pages[page].keys():
-                self.edited_pages[page]["rotate"] += -90
-            else:
-                self.edited_pages[page]["rotate"] = -90
-        else:
-            self.edited_pages[page] = {"rotate": -90}
+        self.rotate_pdf_page(page, 'cw')
         self.init_pdf_image(pdf_page=page)
         return
 
