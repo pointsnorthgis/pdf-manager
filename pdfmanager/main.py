@@ -3,15 +3,18 @@ Utility for splitting multi page PDFs into single page files
 Developed By: Zackary King
 Created: August 27, 2020
 Updated By: Zackary King 
-Updated On: August 28, 2020
+Updated On: December 29, 2020
 """
 
 import os
 import sys
 import argparse
 import tkinter
-from tkinter import Tk, filedialog, messagebox, ttk
+from tkinter import Tk, filedialog, messagebox, ttk, Toplevel
 from PyPDF4 import PdfFileReader, PdfFileWriter
+import PIL
+from PIL import ImageTk
+import fitz
 
 
 class PdfHandler(object):
@@ -26,6 +29,9 @@ class PdfHandler(object):
         self.pdf = None  # PDF File Reader
         self.page_count = None  # Number of pages in split PDF
         self.pdf_writer = PdfFileWriter()  # PDF File Writer
+        self.pdf_image = None
+        self.edited_pages = {}
+        self.current_page = 0
 
     def error_message(self, message):
         print("Error: {}".format(message))
@@ -79,6 +85,32 @@ class PdfHandler(object):
             self.start_page = self.pages_array[0]
         if not self.end_page:
             self.end_page = self.pages_array[-1]
+
+    def pdf_page_image(self, pdf_page=0, rotate=0):
+        doc = fitz.open(self.pdf_path)
+        page = doc.loadPage(pdf_page)
+        pix = page.getPixmap()
+        pil_image = PIL.Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        if rotate != 0:
+            pil_image = pil_image.rotate(rotate, PIL.Image.NEAREST, expand=1)
+        return pil_image
+
+    def rotate_pdf_page(self, page, direction):
+        direction = direction.lower()
+        if direction == 'ccw':
+            rotate = 90
+        elif direction == 'cw':
+            rotate = -90
+        else:
+            raise Exception("Enter 'ccw' or 'cw' as rotation directions")
+
+        if page in self.edited_pages.keys():
+            if "rotate" in self.edited_pages[page].keys():
+                self.edited_pages[page]["rotate"] += rotate
+            else:
+                self.edited_pages[page]["rotate"] = rotate
+        else:
+            self.edited_pages[page] = {"rotate": rotate}
 
     def parse_pages(self, page_range_input):
         """
@@ -167,7 +199,6 @@ class PdfHandler(object):
             self.complete()
             assert Exception(message)
 
-
 class PdfMergeUI(PdfHandler):
     """TKinter user interface for splitting/merging PDFs"""
     def __init__(self):
@@ -187,6 +218,115 @@ class PdfMergeUI(PdfHandler):
             self.split_pdf()
         else:
             self.merge_pdf()
+        self.complete_message()
+
+    def complete_message(self):
+        '''complete message as popup'''
+        popup = Tk()
+        popup.wm_title("!")
+        label = ttk.Label(popup, text="Proccessing Complete", font=("Verdana", 10))
+        label.pack(side="top", fill="x", pady=10)
+        exit_btn = ttk.Button(popup, text="Okay", command=popup.destroy)
+        exit_btn.pack()
+        popup.mainloop()
+
+    def init_pdf_image(self, pdf_page=0):
+        '''Get PDF Page as image and display in GUI'''
+        rotate = 0
+        if pdf_page in self.edited_pages.keys():
+            if "rotate" in self.edited_pages[pdf_page].keys():
+                rotate = self.edited_pages[pdf_page]["rotate"]
+        
+        self.pdf_image = self.pdf_page_image(pdf_page, rotate=rotate)
+        self.pdf_image = ImageTk.PhotoImage(self.pdf_image)
+        # self.pdf_canvas['width'] = self.pdf_image.width()
+        # self.pdf_canvas['height'] = self.pdf_image.height()
+        self.pdf_canvas.create_image((10,10), image=self.pdf_image, anchor='nw')
+
+    def next_pdf_page(self):
+        if self.current_page < self.end_page:
+            self.current_page += 1
+        self.init_pdf_image(pdf_page=self.current_page)
+
+    def previous_pdf_page(self):
+        if self.current_page >= self.start_page:
+            self.current_page = self.current_page - 1
+        self.init_pdf_image(pdf_page=self.current_page)
+
+    def rotate_pdf_ccw(self):
+        '''Rotate PDF Page Conter Clockwise'''
+        page = self.current_page
+        self.rotate_pdf_page(page, 'ccw')
+        self.init_pdf_image(pdf_page=page)
+
+    def rotate_pdf_cw(self):
+        '''Rotate PDF Page Clockwise'''
+        page = self.current_page
+        self.rotate_pdf_page(page, 'cw')
+        self.init_pdf_image(pdf_page=page)
+        return
+
+    def save_pdf_edit(self, output_file_name=None):
+        '''Save edits to PDF File'''
+        base_path, file_name = os.path.split(self.pdf_paths[0])
+        file_name, extension = os.path.splitext(file_name)
+        edited_file_name = file_name + '_edited' + extension
+        if not output_file_name:
+            output_filename = os.path.join(base_path, edited_file_name)
+            
+        for pdf in self.pdf_paths:
+            self.pdf = PdfFileReader(pdf)
+            for page_num in range(0, self.pdf.getNumPages()):
+                page = self.pdf.getPage(page_num)
+                if page_num in self.edited_pages.keys():
+                    if "rotate" in self.edited_pages[page_num].keys():
+                        rotate = self.edited_pages[page_num]["rotate"]
+                        page.rotateCounterClockwise(rotate)
+                self.pdf_writer.addPage(page)
+        self.write_pdf(output_filename)
+        self.complete()
+        self.close_pdf_edit()
+        self.complete_message()
+        return
+
+    def edit_pdf_page(self):
+        '''Child window with buttons for rotating pdf pages'''
+        # If a valid PDF is not selected, do not open window
+        if not self.pdf_path or not os.path.isfile(self.pdf_path):
+            return
+        self.pdf_window = Toplevel()
+        pdf_window = self.pdf_window
+        pdf_window.wm_title('Edit PDF')
+        pdf_window.geometry('1000x1000')
+        rotate_ccw_btn = tkinter.Button(pdf_window, text="Rotate CCW", command=self.rotate_pdf_ccw)
+        rotate_ccw_btn.pack()
+        previous_page_btn = tkinter.Button(pdf_window, text="Previous Page", command=self.previous_pdf_page)
+        previous_page_btn.pack()
+        next_page_btn = tkinter.Button(pdf_window, text="Next Page", command=self.next_pdf_page)
+        next_page_btn.pack()
+        rotate_cw_btn = tkinter.Button(pdf_window, text="Rotate CW", command=self.rotate_pdf_cw)
+        rotate_cw_btn.pack()
+        save_btn = tkinter.Button(pdf_window, text="Save", command=self.save_pdf_edit)
+        save_btn.pack()
+        cancel_btn = tkinter.Button(pdf_window, text="Cancel", bg="red", command=self.close_pdf_edit)
+        cancel_btn.pack()
+        self.pdf_canvas = tkinter.Canvas(pdf_window, height=1000, width=1000, bg="grey")
+        self.pdf_canvas.pack()
+
+        rotate_ccw_btn.place(x=10, y=10)
+        previous_page_btn.place(x=100, y=10)
+        next_page_btn.place(x=200, y=10)
+        rotate_cw_btn.place(x=280, y=10)
+        save_btn.place(x=360, y=10)
+        cancel_btn.place(x=410, y=10)
+        self.pdf_canvas.place(x=10, y=50)
+
+        # Get PDF Properties
+        self.list_pages(self.pdf_path)
+        self.get_bounding_pages()
+        self.init_pdf_image()
+        pdf_window.mainloop()
+        return
 
     def error_message(self, message):
         '''Error message as popup'''
@@ -200,6 +340,9 @@ class PdfMergeUI(PdfHandler):
 
     def close(self):
         self.ui.destroy()
+
+    def close_pdf_edit(self):
+        self.pdf_window.destroy()
     
     def setup_ui(self):
         """Setup user interface with TKinter"""
@@ -211,8 +354,14 @@ class PdfMergeUI(PdfHandler):
                 filetypes=(("pdf","*.pdf"),("all files","*.*"))
             )
             self.filename = self.ui.filename
-            self.pdf_paths.append(self.ui.filename)
-
+            self.pdf_paths = []
+            self.pdf_paths.append(self.filename)
+            self.pdf_path = self.filename
+            label = os.path.split(self.filename)[1]
+            if len(label) > 50:
+                label = '...' + label[-50:]
+            self.file_name_label.config(text=label)
+            
         def select_pdfs():
             """Function for opening file selector for multiple PDFs"""
             self.ui.files_list =  filedialog.askopenfilenames(
@@ -253,6 +402,8 @@ class PdfMergeUI(PdfHandler):
                     self.select_pdf['command'] = select_pdfs
                     self.select_pdf['text'] = "Select PDF Files"
                     hide_frame_content(self.page_range_frame)
+                    hide_frame_content(self.file_name_frame)
+                    hide_frame_content(self.edit_pdf_btn_frame)
                     show_frame_content(self.list_frame)
                 else:
                     self.select_pdf['command'] = select_pdf
@@ -263,7 +414,15 @@ class PdfMergeUI(PdfHandler):
                         self.merge = False
                     self.list_frame.lower()
                     hide_frame_content(self.list_frame)
-                    show_frame_content(self.page_range_frame)
+
+                    if event.widget.get() != "Edit PDF":
+                        hide_frame_content(self.edit_pdf_btn_frame)
+                        show_frame_content(self.page_range_frame)
+                    if event.widget.get() == "Edit PDF":
+                        hide_frame_content(self.page_range_frame)
+                        show_frame_content(self.edit_pdf_btn_frame)
+                    
+                    show_frame_content(self.file_name_frame)
 
         def listbox_select(event=None):
             """Get the currently selected listbox item"""
@@ -278,7 +437,7 @@ class PdfMergeUI(PdfHandler):
         # Combobox for selecting how PDFs will be processed
         self.combo_box = ttk.Combobox(
             self.ui,
-            values=['Split to Multiple PDFs', 'Split to Single PDF', 'Merge PDFs'],
+            values=['Split to Multiple PDFs', 'Split to Single PDF', 'Merge PDFs', 'Edit PDF'],
         )
         self.combo_box.set("Split to Multiple PDFs")
         self.combo_box.pack()
@@ -287,6 +446,14 @@ class PdfMergeUI(PdfHandler):
         self.select_pdf = tkinter.Button(
             self.ui, text="Select PDF", command=select_pdf
         )
+
+        self.file_name_frame = tkinter.Frame(self.ui)
+        self.file_name_label = tkinter.Label(
+            self.file_name_frame,
+            text="No PDF Selected",
+            height=2
+        )
+        self.file_name_label.pack()
 
         # List of PDFs to merge
         self.list_frame = tkinter.Frame(self.ui)
@@ -312,8 +479,16 @@ class PdfMergeUI(PdfHandler):
             height=2
         )
         page_range_label.pack()
-        self.page_range = tkinter.Entry(self.page_range_frame, textvariable=tkinter.StringVar())
-        self.page_range.pack(fill='y')
+        
+        self.page_range_text = tkinter.Entry(self.page_range_frame, textvariable=tkinter.StringVar())
+        self.page_range_text.pack(fill='y')
+
+        self.edit_pdf_btn_frame = tkinter.Frame(self.ui)
+        edit_pdf_btn = tkinter.Button(
+            self.edit_pdf_btn_frame, text="Edit PDF",
+            command=self.edit_pdf_page
+        )
+        edit_pdf_btn.pack_forget()
 
         self.submit_button = tkinter.Button(
             self.ui, text="Start", command=self.submit_callback, bg="green"
@@ -323,13 +498,19 @@ class PdfMergeUI(PdfHandler):
             self.ui, text="Close", command=self.close, bg="red"
         )
 
+        # self.canvas = tkinter.Canvas(height=100, width=100)
+        # self.canvas.pack()
+
         label.place(x=5, y=10)
         self.combo_box.place(x=10, y=30)
         self.select_pdf.place(x=10, y=60)
-        self.page_range_frame.place(x=10, y=90)
-        self.list_frame.place(x=10, y=170)
-        self.submit_button.place(x=100, y=350)
-        self.close_button.place(x=140, y=350)
+        self.file_name_frame.place(x=10, y=85)
+        self.page_range_frame.place(x=10, y=115)
+        self.edit_pdf_btn_frame.place(x=10, y=115)
+        self.list_frame.place(x=10, y=195)
+        self.submit_button.place(x=100, y=380)
+        self.close_button.place(x=140, y=380)
+        # self.canvas.place(x=10, y=410)
         self.ui.mainloop()
 
 if __name__ == '__main__':

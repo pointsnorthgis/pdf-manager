@@ -1,14 +1,15 @@
 # virtual environment files
 env
 
-# Test Files
-test_data/docs-pdf
-
 # Microsoft Visual Studio Code Files
 .vscode
 
-#Pyinstaller Builds
+# Pyinstaller Builds
 dist
 build
 *.spec
 __pycache__
+
+
+# MacOS Stuff
+.DS_Store
